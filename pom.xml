@@ -5,6 +5,21 @@
   <version>0.0.1-SNAPSHOT</version>
   <name>Managed</name>
   
+	<distributionManagement>
+		<!-- use the following if you're not using a snapshot version. -->
+		<repository>
+		        <id>nexus</id>
+		        <name>QuantasnetNexus</name>
+		        <url>http://buildbot.quantasnet.net:8083/nexus/content/repositories/releases</url>
+		</repository>
+		<!-- use the following if you ARE using a snapshot version. -->
+		<snapshotRepository>
+		        <id>nexus</id>
+		        <name>QuantasnetNexus</name>
+		        <url>http://buildbot.quantasnet.net:8083/nexus/content/repositories/snapshots</url>
+		</snapshotRepository>
+	</distributionManagement>
+
   <dependencies>
   	<dependency>
   		<groupId>org.apache.directory.studio</groupId>
