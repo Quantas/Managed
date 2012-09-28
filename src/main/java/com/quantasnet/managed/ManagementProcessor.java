@@ -16,13 +16,13 @@ public class ManagementProcessor
 {
 	private static final Logger LOG = Logger.getLogger(ManagementProcessor.class);
 	
-	public static ObjectName constructObjectName(Object obj)
+	public static ObjectName constructObjectName(Class<?> clazz)
 	{
 		ObjectName name = null;
 		
 		try
 		{
-			name = new ObjectName(obj.getClass().getPackage().getName() + ":type=" + obj.getClass().getSimpleName());
+			name = new ObjectName(clazz.getPackage().getName() + ":type=" + clazz.getSimpleName());
 		}
 		catch(JMException e)
 		{
@@ -64,7 +64,7 @@ public class ManagementProcessor
 			
 			if(instance != null)
 			{
-				ManagementFactory.getPlatformMBeanServer().registerMBean(instance, constructObjectName(obj));
+				ManagementFactory.getPlatformMBeanServer().registerMBean(instance, constructObjectName(obj.getClass()));
 			}
 		}
 		catch(Exception e)
@@ -77,7 +77,7 @@ public class ManagementProcessor
 	{
 		try
 		{
-			ManagementFactory.getPlatformMBeanServer().unregisterMBean(constructObjectName(obj));
+			ManagementFactory.getPlatformMBeanServer().unregisterMBean(constructObjectName(obj.getClass()));
 		}
 		catch(JMException e)
 		{

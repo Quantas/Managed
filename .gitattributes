@@ -1,4 +1,6 @@
 * text=auto !eol
+/.classpath -text svneol=unset#text/plain
+/.project -text svneol=unset#text/plain
 /pom.xml -text
 src/main/java/com/quantasnet/managed/DynamicManagementMBean.java -text
 src/main/java/com/quantasnet/managed/InvalidManagementAnnotationException.java -text
