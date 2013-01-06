@@ -5,7 +5,6 @@
 .settings/org.eclipse.m2e.core.prefs -text svneol=unset#text/plain
 /pom.xml -text
 src/main/java/com/quantasnet/managed/DynamicManagementMBean.java -text
-src/main/java/com/quantasnet/managed/InvalidManagementAnnotationException.java -text
 src/main/java/com/quantasnet/managed/Managed.java -text
 src/main/java/com/quantasnet/managed/ManagementProcessor.java -text
 src/test/java/com/quantasnet/managed/ManagedTest.java -text svneol=unset#text/plain

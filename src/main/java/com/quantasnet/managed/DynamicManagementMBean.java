@@ -49,7 +49,7 @@ import org.slf4j.LoggerFactory;
 	 * @param description Description of the object for JMX
 	 * @throws InvalidManagementAnnotationException
 	 */
-	public DynamicManagementMBean(final Object objInstance, final String description) throws InvalidManagementAnnotationException
+	public DynamicManagementMBean(final Object objInstance, final String description)
 	{
 		this.objInstance = objInstance;
 		
