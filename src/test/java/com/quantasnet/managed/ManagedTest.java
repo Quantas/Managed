@@ -8,9 +8,11 @@ import java.lang.management.ManagementFactory;
 import javax.management.Attribute;
 import javax.management.AttributeList;
 import javax.management.AttributeNotFoundException;
+import javax.management.DynamicMBean;
 import javax.management.InstanceNotFoundException;
 import javax.management.InvalidAttributeValueException;
 import javax.management.MBeanException;
+import javax.management.MBeanInfo;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 import javax.management.ReflectionException;
@@ -155,6 +157,23 @@ public class ManagedTest
 	public void managementTest_oneAnnotation()
 	{
 		ManagementProcessor.register(new TestClassOneAnnotation());
+	}
+	
+	@Test
+	public void managementTest_otherDynamic()
+	{
+		ManagementProcessor.register(new TestDynamic());
+	}
+	
+	private static final class TestDynamic implements DynamicMBean
+	{
+		public Object getAttribute(String attribute) throws AttributeNotFoundException, MBeanException, ReflectionException {return null;}
+		public void setAttribute(Attribute attribute) throws AttributeNotFoundException, InvalidAttributeValueException, MBeanException, ReflectionException {}
+		public AttributeList getAttributes(String[] attributes) {return null;}
+		public AttributeList setAttributes(AttributeList attributes) {return null;}
+		public Object invoke(String actionName, Object[] params, String[] signature) throws MBeanException, ReflectionException {return null;}
+		public MBeanInfo getMBeanInfo() {return null;}
+		
 	}
 	
 	private static final class TestClassOneAnnotation
