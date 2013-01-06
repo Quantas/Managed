@@ -9,7 +9,6 @@ import javax.management.Attribute;
 import javax.management.AttributeList;
 import javax.management.AttributeNotFoundException;
 import javax.management.DynamicMBean;
-import javax.management.IntrospectionException;
 import javax.management.InvalidAttributeValueException;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanConstructorInfo;
@@ -28,7 +27,7 @@ import org.slf4j.LoggerFactory;
  * This class should not be used directly, but invoked through the ManagementProcessor's register method, which will call<br />
  * this class to create the object then register it with the PlatformMBeanServer.<br />
  * <br />
- * TODO clean up error handling
+ * 
  * @author Quantas
  */
 /*package*/ final class DynamicManagementMBean implements DynamicMBean
@@ -65,22 +64,12 @@ import org.slf4j.LoggerFactory;
 		mgmtConstructors = null;
 		notifications = null;	//NYI
 
-		try
-		{
-			createMBeans(methods, fields, constructors);
-			
-			if(!(attributes == null && operations == null && mgmtConstructors == null && notifications == null))
-			{
-				info = new MBeanInfo(this.objClass.getName(), description, attributes, mgmtConstructors, operations, notifications);
-			}
-		} 
-		catch (IntrospectionException e) 
-		{
-			throw new InvalidManagementAnnotationException("Error Registering the DynamicManagementMBean: ", e);
-		}
+		createMBeans(methods, fields, constructors);
+		
+		info = new MBeanInfo(this.objClass.getName(), description, attributes, mgmtConstructors, operations, notifications);
 	}
 	
-	private void createMBeans(final Method[] methods, final Field[] fields, final Constructor<?>[] constructors) throws InvalidManagementAnnotationException, IntrospectionException
+	private void createMBeans(final Method[] methods, final Field[] fields, final Constructor<?>[] constructors)
 	{
 		final ArrayList<MBeanAttributeInfo> attrList = new ArrayList<MBeanAttributeInfo>();
 		final ArrayList<MBeanOperationInfo> operList = new ArrayList<MBeanOperationInfo>();

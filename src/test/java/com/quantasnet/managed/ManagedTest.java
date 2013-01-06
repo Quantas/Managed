@@ -145,6 +145,32 @@ public class ManagedTest
 		assertTrue(afterList.size() == 1);
 	}
 	
+	@Test
+	public void managementTest_noAnnotations()
+	{
+		ManagementProcessor.register(new TestClassUnManaged());
+	}
+	
+	@Test
+	public void managementTest_oneAnnotation()
+	{
+		ManagementProcessor.register(new TestClassOneAnnotation());
+	}
+	
+	private static final class TestClassOneAnnotation
+	{
+		@Managed
+		public TestClassOneAnnotation()
+		{
+			
+		}
+	}
+	
+	private static final class TestClassUnManaged
+	{
+		
+	}
+	
 	private static final class TestClass
 	{
 		@Managed
