@@ -6,15 +6,21 @@ import javax.management.DynamicMBean;
 import javax.management.JMException;
 import javax.management.ObjectName;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Factory class for registering DynamicMBeans
  * @author Quantas
  */
-public class ManagementProcessor 
+public final class ManagementProcessor 
 {
-	private static final Logger LOG = Logger.getLogger(ManagementProcessor.class);
+	private static final Logger LOG = LoggerFactory.getLogger(ManagementProcessor.class);
+	
+	private ManagementProcessor()
+	{
+		// no-op
+	}
 	
 	public static ObjectName constructObjectName(Class<?> clazz)
 	{
@@ -26,7 +32,7 @@ public class ManagementProcessor
 		}
 		catch(JMException e)
 		{
-			
+			LOG.error("Error creating ObjectName", e);
 		}
 		
 		return name;
@@ -55,7 +61,7 @@ public class ManagementProcessor
 			}
 			else
 			{
-				DynamicManagementMBean mbean = new DynamicManagementMBean(obj, desc);
+				final DynamicManagementMBean mbean = new DynamicManagementMBean(obj, desc);
 				if(mbean.getMBeanInfo() != null)
 				{
 					instance = mbean;
@@ -84,5 +90,4 @@ public class ManagementProcessor
 			LOG.error("Error Unregistering the DynamicManagementMBean with the Factory", e);
 		}
 	}
-
 }

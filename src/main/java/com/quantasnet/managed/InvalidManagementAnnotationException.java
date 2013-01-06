@@ -2,9 +2,10 @@ package com.quantasnet.managed;
 
 /**
  * Exceptions for the Management Annotation package
+ * 
  * @author Quantas
  */
-public class InvalidManagementAnnotationException extends Exception 
+/*package*/ final class InvalidManagementAnnotationException extends Exception 
 {
 	private static final long serialVersionUID = 1L;
 
@@ -13,12 +14,12 @@ public class InvalidManagementAnnotationException extends Exception
 		super();
 	}
 	
-	public InvalidManagementAnnotationException(String s)
+	public InvalidManagementAnnotationException(final String s)
 	{
 		super(s);
 	}
 	
-	public InvalidManagementAnnotationException(String s, Exception e)
+	public InvalidManagementAnnotationException(final String s, final Exception e)
 	{
 		super(s,e);
 	}

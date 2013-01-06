@@ -19,19 +19,22 @@ import javax.management.MBeanNotificationInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.ReflectionException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * This class takes the object passed in and parses all the @Managed annotations for the constructors/methods/fields<br />
  * Once all the annotations are found it will then build the MBeanInfo object containing the methods/fields/constructors<br />
  * This class should not be used directly, but invoked through the ManagementProcessor's register method, which will call<br />
  * this class to create the object then register it with the PlatformMBeanServer.<br />
  * <br />
- * *NOTE* If using invoke with a param that is the Class representation of a primitive type it will not work, ie using Boolean instead of boolean<br />
- * <br />
  * TODO clean up error handling
  * @author Quantas
  */
-class DynamicManagementMBean implements DynamicMBean
+/*package*/ final class DynamicManagementMBean implements DynamicMBean
 {
+	private static final Logger LOG = LoggerFactory.getLogger(DynamicManagementMBean.class);
+	
 	private Object objInstance;
 	private Class<?> objClass;
 	private MBeanInfo info;
@@ -47,13 +50,15 @@ class DynamicManagementMBean implements DynamicMBean
 	 * @param description Description of the object for JMX
 	 * @throws InvalidManagementAnnotationException
 	 */
-	public DynamicManagementMBean(Object objInstance, String description) throws InvalidManagementAnnotationException
+	public DynamicManagementMBean(final Object objInstance, final String description) throws InvalidManagementAnnotationException
 	{
 		this.objInstance = objInstance;
+		
 		objClass = objInstance.getClass();
-		Method[] methods = objClass.getDeclaredMethods();
-		Field[] fields = objClass.getDeclaredFields();
-		Constructor<?>[] constructors = objClass.getDeclaredConstructors();
+		
+		final Method[] methods = objClass.getDeclaredMethods();
+		final Field[] fields = objClass.getDeclaredFields();
+		final Constructor<?>[] constructors = objClass.getDeclaredConstructors();
 		
 		attributes = null;
 		operations = null;
@@ -75,183 +80,275 @@ class DynamicManagementMBean implements DynamicMBean
 		}
 	}
 	
-	private void createMBeans(Method[] methods, Field[] fields, Constructor<?>[] constructors) throws InvalidManagementAnnotationException, IntrospectionException
+	private void createMBeans(final Method[] methods, final Field[] fields, final Constructor<?>[] constructors) throws InvalidManagementAnnotationException, IntrospectionException
 	{
-		ArrayList<MBeanAttributeInfo> attrList = new ArrayList<MBeanAttributeInfo>();
-		ArrayList<MBeanOperationInfo> operList = new ArrayList<MBeanOperationInfo>();
-		ArrayList<MBeanConstructorInfo> consList = new ArrayList<MBeanConstructorInfo>();
+		final ArrayList<MBeanAttributeInfo> attrList = new ArrayList<MBeanAttributeInfo>();
+		final ArrayList<MBeanOperationInfo> operList = new ArrayList<MBeanOperationInfo>();
+		final ArrayList<MBeanConstructorInfo> consList = new ArrayList<MBeanConstructorInfo>();
 		
 		//Parse the annotations for all the methods
-		for(int i=0; i<methods.length; i++)
+		for(final Method method : methods)
 		{
-			Managed mgmt = methods[i].getAnnotation(Managed.class);			
+			final Managed mgmt = method.getAnnotation(Managed.class);			
 			if(mgmt != null)
 			{				
-				operList.add(new MBeanOperationInfo(mgmt.description(), methods[i]));
+				operList.add(new MBeanOperationInfo(mgmt.description(), method));
 			}
 		}
 		
 		//Parse the annotations for all the fields
-		for(int i=0; i<fields.length; i++)
+		for(final Field field : fields)
 		{
-			Managed mgmt = fields[i].getAnnotation(Managed.class);
+			final Managed mgmt = field.getAnnotation(Managed.class);
 			if(mgmt != null)
 			{
-				attrList.add(new MBeanAttributeInfo(fields[i].getName(), fields[i].getType().getName(), mgmt.description(), mgmt.readable(), mgmt.writable(), false));
+				attrList.add(new MBeanAttributeInfo(field.getName(), field.getType().getName(), mgmt.description(), mgmt.readable(), mgmt.writable(), false));
 			}
 		}
 		
 		//Parse the annotations for all the constructors
-		for(int i=0; i<constructors.length; i++)
+		for(final Constructor<?> constructor : constructors)
 		{
-			Managed mgmt = constructors[i].getAnnotation(Managed.class);
+			final Managed mgmt = constructor.getAnnotation(Managed.class);
 			if(mgmt != null)
 			{
-				consList.add(new MBeanConstructorInfo(mgmt.description(), constructors[i]));
+				consList.add(new MBeanConstructorInfo(mgmt.description(), constructor));
 			}
 		}
 		
-		if(attrList.size() > 0)
+		if(!attrList.isEmpty())
 		{
 			attributes = new MBeanAttributeInfo[attrList.size()];
 			attrList.toArray(attributes);
 		}
 		
-		if(operList.size() > 0)
+		if(!operList.isEmpty())
 		{
 			operations = new MBeanOperationInfo[operList.size()];
 			operList.toArray(operations);
 		}
 		
-		if(consList.size() > 0)
+		if(!consList.isEmpty())
 		{
 			mgmtConstructors = new MBeanConstructorInfo[consList.size()];
 			consList.toArray(mgmtConstructors);
 		}
 	}
 	
-	public Object getAttribute(String attribute) throws AttributeNotFoundException, MBeanException, ReflectionException
+	public Object getAttribute(final String attribute) throws AttributeNotFoundException, MBeanException, ReflectionException
 	{
 		Object value = null;
         
 		try 
 		{
-			Field field = objClass.getDeclaredField(attribute);
-			field.setAccessible(true);
-			value = field.get(objInstance);
-			field.setAccessible(false);
+			boolean foundAttribute = false;
+			
+			for(final MBeanAttributeInfo mbeanAttr : attributes)
+			{
+				if(mbeanAttr.getName().equals(attribute))
+				{
+					foundAttribute = true;
+					
+					if(mbeanAttr.isReadable())
+					{
+						final Field field = objClass.getDeclaredField(attribute);
+						
+						final boolean isAccessible = field.isAccessible();
+						if(!isAccessible)
+						{
+							field.setAccessible(true);
+						}
+						
+						value = field.get(objInstance);
+						
+						field.setAccessible(isAccessible);
+					}
+					else
+					{
+						throw new Exception("Attribute not readable: " + attribute);
+					}
+				}
+			}
+			
+			if(!foundAttribute)
+			{
+				throw new AttributeNotFoundException();
+			}
 		} 
 		catch (Exception e) 
 		{
-			e.printStackTrace();
+			throw new MBeanException(e);
 		}
 		
         return value;
 	}
 
-	public void setAttribute(Attribute attribute) throws AttributeNotFoundException, InvalidAttributeValueException, MBeanException, ReflectionException 
+	public void setAttribute(final Attribute attribute) throws AttributeNotFoundException, InvalidAttributeValueException, MBeanException, ReflectionException 
 	{
 		try 
 		{
-			Field field = objClass.getDeclaredField(attribute.getName());
-			field.setAccessible(true);
-			field.set(objInstance, attribute.getValue());
-			field.setAccessible(false);
+			boolean foundAttribute = false;
+			
+			for(final MBeanAttributeInfo mbeanAttr : attributes)
+			{
+				if(mbeanAttr.getName().equals(attribute.getName()))
+				{
+					foundAttribute = true;
+					
+					if(mbeanAttr.isWritable())
+					{
+						final Field field = objClass.getDeclaredField(attribute.getName());
+						final boolean isAccessible = field.isAccessible();
+						if(!isAccessible)
+						{
+							field.setAccessible(true);
+						}
+						
+						field.set(objInstance, attribute.getValue());
+						
+						field.setAccessible(isAccessible);
+					}
+					else
+					{
+						throw new Exception("Attribute not writable: " + attribute.getName());
+					}
+				}
+			}
+			
+			if(!foundAttribute)
+			{
+				throw new AttributeNotFoundException();
+			}
 		} 
 		catch (Exception e) 
 		{
-			e.printStackTrace();
+			LOG.error("Error setting Attribute", e);
+			throw new MBeanException(e);
 		} 
 	}
 
-	public AttributeList getAttributes(String[] attributes) 
+	public AttributeList getAttributes(final String[] attributes) 
 	{
 		AttributeList values = new AttributeList();
-        for (int a = 0; a < attributes.length; a++) 
+        for (final String attribute : attributes)
         {
-        	String name = attributes[a];
+        	final String name = attribute;
+        	
         	try
         	{
-	            Object value = getAttribute(name);
-	            Attribute attr = new Attribute(name, value);
+	            final Object value = getAttribute(name);
+	            final Attribute attr = new Attribute(name, value);
+	            
 	            values.add(attr);
         	}
         	catch(Exception e)
         	{
-        		e.printStackTrace();
+        		LOG.error("Error getting attribute: " + attribute, e);
         	}
         }
         
         return values;
 	}
 
-	public AttributeList setAttributes(AttributeList attributes) 
+	public AttributeList setAttributes(final AttributeList attributes) 
 	{
-		AttributeList retList = new AttributeList();
-		try
+		final AttributeList retList = new AttributeList();
+		
+		for(final Object attr : attributes)
 		{
-			for(Object attr : attributes)
+			try
 			{
 				setAttribute((Attribute)attr);
 				retList.add(getAttribute(((Attribute)attr).getName()));
 			}
+			catch(Exception e)
+			{
+				LOG.error("Error setting attribute: " + attr, e);
+			}
 		}
-		catch(Exception e)
-		{
-			e.printStackTrace();
-		}
+		
 		
 		return retList;
 	}
 
-	public Object invoke(String actionName, Object[] params, String[] signature) throws MBeanException, ReflectionException 
+	public Object invoke(final String actionName, final Object[] params, final String[] signature) throws MBeanException, ReflectionException 
 	{
 		Object retVal = null;
 		
-		for(MBeanOperationInfo mbOperInfo : operations)
+		boolean foundMethod = false;
+		
+		for(final MBeanOperationInfo mbOperInfo : operations)
 		{
 			if(mbOperInfo.getName().equals(actionName))
 			{
+				foundMethod = true;
+				
 				try
 				{
 					int paramCount = 0;
 					
-					Class<?>[] paramClazzes = new Class<?>[params.length];
+					final Class<?>[] paramClazzes = new Class<?>[params.length];
 					
-					for(Object param : params)
+					for(final String param : signature)
 					{
-						if(param instanceof Boolean)
+						if("boolean".equals(param))
+						{
 							paramClazzes[paramCount] = Boolean.TYPE;
-						else if(param instanceof Integer)
+						}
+						else if("int".equals(param))
+						{
 							paramClazzes[paramCount] = Integer.TYPE;
-						else if(param instanceof Character)
+						}
+						else if("char".equals(param))
+						{
 							paramClazzes[paramCount] = Character.TYPE;
-						else if(param instanceof Short)
-							paramClazzes[paramCount] = Short.TYPE;
-						else if(param instanceof Long)
-							paramClazzes[paramCount] = Long.TYPE;	
-						else if(param instanceof Double)
+						}
+						else if("long".equals(param))
+						{
+							paramClazzes[paramCount] = Long.TYPE;
+						}
+						else if("double".equals(param))
+						{
 							paramClazzes[paramCount] = Double.TYPE;
-						else if(param instanceof Float)
+						}
+						else if("float".equals(param))
+						{
 							paramClazzes[paramCount] = Float.TYPE;
-						else if(param instanceof Byte)
+						}
+						else if("byte".equals(param))
+						{
 							paramClazzes[paramCount] = Byte.TYPE;
+						}
 						else
-							paramClazzes[paramCount] = param.getClass();
+						{
+							paramClazzes[paramCount] = Class.forName(param);
+						}
 						
 						paramCount++;
 					}
 					
-					Method method = objClass.getDeclaredMethod(actionName, paramClazzes);
+					final Method method = objClass.getDeclaredMethod(actionName, paramClazzes);
+					
 					method.setAccessible(true);
+					
 					retVal = method.invoke(objInstance, params);
+					
 					method.setAccessible(false);
 				}
 				catch(Exception e)
 				{
-					e.printStackTrace();
+					LOG.error("Error invoking " + actionName, e);
+					throw new MBeanException(e, "Error invoking " + actionName);
 				}
 			}
+		}
+		
+		if(!foundMethod)
+		{
+			final Exception exc = new Exception("No such method known to JMX: " + actionName);
+			LOG.error("No such method known to JMX: " + actionName, exc);
+			
+			throw new MBeanException(exc);
 		}
 		
 		return retVal;
@@ -261,5 +358,4 @@ class DynamicManagementMBean implements DynamicMBean
 	{
 		return info;
 	}
-	
 }
