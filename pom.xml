@@ -27,7 +27,7 @@
 	</developers>
 
 	<properties>
-		<javaVersion>1.6</javaVersion>
+		<javaVersion>1.5</javaVersion>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 
