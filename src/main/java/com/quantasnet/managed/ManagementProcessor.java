@@ -22,10 +22,11 @@ public final class ManagementProcessor
 	@Managed
 	private static final List<ObjectName> REGISTERED_OBJS = new ArrayList<ObjectName>();
 	
-	private static final ManagementProcessor instance;
+	private static ManagementProcessor instance;
 	
-	static
+	public static void init()
 	{
+		LOG.info("In static initializer block");
 		instance = new ManagementProcessor();
 		ManagementProcessor.register(instance, "Objects registered with the @Managed annotation");
 	}
@@ -63,6 +64,7 @@ public final class ManagementProcessor
 	 */
 	public static void register(final Object obj, final String desc)
 	{
+		LOG.info("Registering MBean: " + obj.getClass().getSimpleName());
 		Object instance = null;
 		
 		try

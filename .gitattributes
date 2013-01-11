@@ -3,6 +3,7 @@
 /.project -text svneol=unset#text/plain
 .settings/org.eclipse.jdt.core.prefs -text svneol=unset#text/plain
 .settings/org.eclipse.m2e.core.prefs -text svneol=unset#text/plain
+/Full-Build[!!-~]Managed.launch -text svneol=unset#text/plain
 /pom.xml -text
 src/main/java/com/quantasnet/managed/DynamicManagementMBean.java -text
 src/main/java/com/quantasnet/managed/Managed.java -text
