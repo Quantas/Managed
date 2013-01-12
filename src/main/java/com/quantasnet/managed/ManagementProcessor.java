@@ -24,7 +24,7 @@ public final class ManagementProcessor
 	
 	private static ManagementProcessor instance;
 	
-	public static void init()
+	static
 	{
 		instance = new ManagementProcessor();
 		ManagementProcessor.register(instance, "Objects registered with the @Managed annotation");
