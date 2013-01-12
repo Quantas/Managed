@@ -26,7 +26,6 @@ public final class ManagementProcessor
 	
 	public static void init()
 	{
-		LOG.info("In static initializer block");
 		instance = new ManagementProcessor();
 		ManagementProcessor.register(instance, "Objects registered with the @Managed annotation");
 	}
