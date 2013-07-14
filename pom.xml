@@ -36,13 +36,13 @@
 		<repository>
 			<id>nexus</id>
 			<name>QuantasnetNexus</name>
-			<url>http://buildbot.quantasnet.net:8083/nexus/content/repositories/releases</url>
+			<url>http://buildserver.quantasnet.net/nexus/content/repositories/releases</url>
 		</repository>
 		<!-- use the following if you are using a snapshot version. -->
 		<snapshotRepository>
 			<id>nexus</id>
 			<name>QuantasnetNexus</name>
-			<url>http://buildbot.quantasnet.net:8083/nexus/content/repositories/snapshots</url>
+			<url>http://buildserver.quantasnet.net/nexus/content/repositories/snapshots</url>
 		</snapshotRepository>
 	</distributionManagement>
 
