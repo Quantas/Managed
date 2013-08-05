@@ -6,9 +6,15 @@
 	<version>1.0.0-SNAPSHOT</version>
 	<name>Managed</name>
 
+    <parent>
+        <groupId>org.sonatype.oss</groupId>
+        <artifactId>oss-parent</artifactId>
+        <version>7</version>
+    </parent>
+
 	<licenses>
 		<license>
-            <name>The MIT License</name>
+            <name>MIT</name>
             <url>http://opensource.org/licenses/MIT</url>
             <distribution>repo</distribution>
 		</license>
@@ -53,7 +59,7 @@
         <!-- Plugin Versions -->
         <compilerVersion>2.3.2</compilerVersion>
         <sourceVersion>2.2.1</sourceVersion>
-        <javadocVersion>2.9.1</javadocVersion>
+        <javadocPluginVersion>2.9.1</javadocPluginVersion>
         <coberturaVersion>2.5.2</coberturaVersion>
 	</properties>
 
@@ -111,7 +117,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
-                <version>${javadocVersion}</version>
+                <version>${javadocPluginVersion}</version>
 				<configuration>
 					<level>private</level>
 				</configuration>
