@@ -1,9 +1,31 @@
+/**
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2013 Andrew Landsverk
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
 package com.quantasnet.managed;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.management.Attribute;
 import javax.management.AttributeList;
@@ -17,9 +39,10 @@ import javax.management.MBeanInfo;
 import javax.management.MBeanNotificationInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.ReflectionException;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
 
 /**
  * This class takes the object passed in and parses all the @Managed annotations for the constructors/methods/fields<br />
@@ -47,7 +70,6 @@ import org.slf4j.LoggerFactory;
 	 * 
 	 * @param objInstance The instance of the object to be Managed
 	 * @param description Description of the object for JMX
-	 * @throws InvalidManagementAnnotationException
 	 */
 	public DynamicManagementMBean(final Object objInstance, final String description)
 	{
@@ -218,17 +240,18 @@ import org.slf4j.LoggerFactory;
 
 	public AttributeList getAttributes(final String[] attributes) 
 	{
-		AttributeList values = new AttributeList();
+		final AttributeList values = new AttributeList();
+
         for (final String attribute : attributes)
         {
         	final String name = attribute;
         	
         	try
         	{
-	            final Object value = getAttribute(name);
-	            final Attribute attr = new Attribute(name, value);
-	            
-	            values.add(attr);
+                final Object value = getAttribute(name);
+                final Attribute attr = new Attribute(name, value);
+
+                values.add(attr);
         	}
         	catch(Exception e)
         	{
@@ -326,16 +349,20 @@ import org.slf4j.LoggerFactory;
 				}
 				catch(Exception e)
 				{
-					LOG.error("Error invoking " + actionName, e);
-					throw new MBeanException(e, "Error invoking " + actionName);
+                    final String errorText = "Error invoking " + actionName;
+
+					LOG.error(errorText, e);
+					throw new MBeanException(e, errorText);
 				}
 			}
 		}
 		
 		if(!foundMethod)
 		{
-			final Exception exc = new Exception("No such method known to JMX: " + actionName);
-			LOG.error("No such method known to JMX: " + actionName, exc);
+            final String errorText = "No such method known to JMX: " + actionName;
+
+			final Exception exc = new Exception(errorText);
+			LOG.error(errorText, exc);
 			
 			throw new MBeanException(exc);
 		}

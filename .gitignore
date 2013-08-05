@@ -1,2 +1,6 @@
 /.settings
 /target
+.project
+*.iml
+*.ipr
+*.iws
