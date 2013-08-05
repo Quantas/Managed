@@ -1,25 +1,26 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.quantasnet.management</groupId>
 	<artifactId>Managed</artifactId>
 	<version>1.0.1-SNAPSHOT</version>
 
 	<name>Managed</name>
-    <description>Easily add object instances to JMX with a simple annotation.</description>
+	<description>Easily add object instances to JMX with a simple annotation.</description>
 
-    <url>https://github.com/Quantas/Managed</url>
+	<url>https://github.com/Quantas/Managed</url>
 
-    <parent>
-        <groupId>org.sonatype.oss</groupId>
-        <artifactId>oss-parent</artifactId>
-        <version>7</version>
-    </parent>
+	<parent>
+		<groupId>org.sonatype.oss</groupId>
+		<artifactId>oss-parent</artifactId>
+		<version>7</version>
+	</parent>
 
 	<licenses>
 		<license>
-            <name>MIT</name>
-            <url>http://opensource.org/licenses/MIT</url>
-            <distribution>repo</distribution>
+			<name>MIT</name>
+			<url>http://opensource.org/licenses/MIT</url>
+			<distribution>repo</distribution>
 		</license>
 	</licenses>
 
@@ -37,33 +38,33 @@
 		</developer>
 	</developers>
 
-    <scm>
-        <url>https://github.com/quantas/managed</url>
-        <connection>scm:git:git://github.com/quantas/managed.git</connection>
-        <developerConnection>scm:git:git@github.com:Quantas/Managed.git</developerConnection>
-    </scm>
+	<scm>
+		<url>https://github.com/quantas/managed</url>
+		<connection>scm:git:git://github.com/quantas/managed.git</connection>
+		<developerConnection>scm:git:git@github.com:Quantas/Managed.git</developerConnection>
+	</scm>
 
-    <issueManagement>
-        <system>GitHub Issues</system>
-        <url>https://github.com/quantas/managed/issues</url>
-    </issueManagement>
+	<issueManagement>
+		<system>GitHub Issues</system>
+		<url>https://github.com/quantas/managed/issues</url>
+	</issueManagement>
 
 	<properties>
 		<javaVersion>1.5</javaVersion>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <!-- Dependency Versions -->
-        <slf4jVersion>1.6.6</slf4jVersion>
+		<!-- Dependency Versions -->
+		<slf4jVersion>1.6.6</slf4jVersion>
 
-        <!-- Test Dependency Versions -->
-        <junitVersion>4.11</junitVersion>
-        <logbackVersion>1.0.9</logbackVersion>
+		<!-- Test Dependency Versions -->
+		<junitVersion>4.11</junitVersion>
+		<logbackVersion>1.0.9</logbackVersion>
 
-        <!-- Plugin Versions -->
-        <compilerVersion>2.3.2</compilerVersion>
-        <sourceVersion>2.2.1</sourceVersion>
-        <javadocPluginVersion>2.9.1</javadocPluginVersion>
-        <coberturaVersion>2.5.2</coberturaVersion>
+		<!-- Plugin Versions -->
+		<compilerVersion>2.3.2</compilerVersion>
+		<sourceVersion>2.2.1</sourceVersion>
+		<javadocPluginVersion>2.9.1</javadocPluginVersion>
+		<coberturaVersion>2.5.2</coberturaVersion>
 	</properties>
 
 	<dependencies>
@@ -97,7 +98,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-                <version>${compilerVersion}</version>
+				<version>${compilerVersion}</version>
 				<configuration>
 					<fork>true</fork>
 					<source>${javaVersion}</source>
@@ -107,7 +108,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
-                <version>${sourceVersion}</version>
+				<version>${sourceVersion}</version>
 				<executions>
 					<execution>
 						<id>attach-sources</id>
@@ -120,7 +121,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
-                <version>${javadocPluginVersion}</version>
+				<version>${javadocPluginVersion}</version>
 				<configuration>
 					<level>private</level>
 				</configuration>

@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-package com.quantasnet.managed;
+package com.quantasnet.management;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

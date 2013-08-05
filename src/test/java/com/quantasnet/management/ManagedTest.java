@@ -22,11 +22,14 @@
  * THE SOFTWARE.
  */
 
-package com.quantasnet.managed;
+package com.quantasnet.management;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import com.quantasnet.management.Managed;
+import com.quantasnet.management.ManagementProcessor;
 
 import javax.management.Attribute;
 import javax.management.AttributeList;
@@ -66,7 +69,7 @@ public class ManagedTest
 	@Test
 	public void managementTest_constructObjectName()
 	{
-		assertTrue(testClassObjName.getCanonicalName().equals("com.quantasnet.managed:type=TestClass"));
+		assertTrue(testClassObjName.getCanonicalName().equals("com.quantasnet.management:type=TestClass"));
 	}
 	
 	@Test(expected=MBeanException.class)

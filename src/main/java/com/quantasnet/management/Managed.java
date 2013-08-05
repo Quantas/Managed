@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-package com.quantasnet.managed;
+package com.quantasnet.management;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
