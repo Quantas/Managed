@@ -29,8 +29,8 @@ import com.quantasnet.management.Managed;
 
 public PlainObject
 {
-	// writable defaults to false
-	@Managed(writable = true)
+    // writable defaults to false
+    @Managed(writable = true)
     private String testString;
     
     // readable defaults to true
@@ -48,14 +48,15 @@ public PlainObject
     public void unManagedMethod()
     {
     	// not available from JMX
+    }
 }
 ```
 
 The annoation does not act alone however as an instance of an object is requred when registering objects in the JMX console.  You will need to create an instance and register it as seen below:
 
 ```java
-	// create an instance of your object
-	final PlainObject object = new PlainObject();
+    // create an instance of your object
+    final PlainObject object = new PlainObject();
     ManagementProcessor.register(object);
 ```
 
