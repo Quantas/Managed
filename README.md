@@ -52,7 +52,7 @@ public PlainObject
 }
 ```
 
-The annoation does not act alone however as an instance of an object is requred when registering objects in the JMX console.  You will need to create an instance and register it as seen below:
+The annotation does not act alone however as an instance of an object is required when registering objects in the JMX console.  You will need to create an instance and register it as seen below:
 
 ```java
     // create an instance of your object
