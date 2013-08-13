@@ -76,7 +76,9 @@ import java.util.ArrayList;
 
         objClass = objInstance.getClass();
 
-        final Method[] methods = objClass.getDeclaredMethods();
+        // We also want methods from parent classes that may be annotated
+        final Method[] methods = objClass.getMethods();
+
         final Field[] fields = objClass.getDeclaredFields();
         final Constructor<?>[] constructors = objClass.getDeclaredConstructors();
 
@@ -338,7 +340,7 @@ import java.util.ArrayList;
                         paramCount++;
                     }
 
-                    final Method method = objClass.getDeclaredMethod(actionName, paramClazzes);
+                    final Method method = objClass.getMethod(actionName, paramClazzes);
 
                     method.setAccessible(true);
 
