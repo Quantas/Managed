@@ -11,7 +11,7 @@ The goal of this library is to make it so you no longer need an interface with a
 <dependency>
   <groupId>com.quantasnet.management</groupId>
   <artifactId>managed</artifactId>
-  <version>1.0.1</version>
+  <version>1.0.2</version>
 </dependency>
 ```
 
