@@ -49,6 +49,11 @@
         <url>https://github.com/quantas/managed/issues</url>
     </issueManagement>
 
+    <ciManagement>
+        <system>travis-ci</system>
+        <url>https://travis-ci.org/Quantas/Managed</url>
+    </ciManagement>
+
     <properties>
         <javaVersion>1.5</javaVersion>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
