@@ -43,6 +43,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * This class takes the object passed in and parses all the @Managed annotations for the constructors/methods/fields<br />
@@ -77,7 +79,7 @@ import java.util.ArrayList;
         objClass = objInstance.getClass();
 
         // We also want methods from parent classes that may be annotated
-        final Method[] methods = objClass.getMethods();
+        final List<Method> methods = getMethods(objClass);
 
         final Field[] fields = objClass.getDeclaredFields();
         final Constructor<?>[] constructors = objClass.getDeclaredConstructors();
@@ -92,11 +94,11 @@ import java.util.ArrayList;
         info = new MBeanInfo(this.objClass.getName(), description, attributes, mgmtConstructors, operations, notifications);
     }
 
-    private void createMBeans(final Method[] methods, final Field[] fields, final Constructor<?>[] constructors)
+    private void createMBeans(final List<Method> methods, final Field[] fields, final Constructor<?>[] constructors)
     {
-        final ArrayList<MBeanAttributeInfo> attrList = new ArrayList<MBeanAttributeInfo>();
-        final ArrayList<MBeanOperationInfo> operList = new ArrayList<MBeanOperationInfo>();
-        final ArrayList<MBeanConstructorInfo> consList = new ArrayList<MBeanConstructorInfo>();
+        final List<MBeanAttributeInfo> attrList = new ArrayList<MBeanAttributeInfo>();
+        final List<MBeanOperationInfo> operList = new ArrayList<MBeanOperationInfo>();
+        final List<MBeanConstructorInfo> consList = new ArrayList<MBeanConstructorInfo>();
 
         //Parse the annotations for all the methods
         for (final Method method : methods)
@@ -245,12 +247,10 @@ import java.util.ArrayList;
 
         for (final String attribute : attributes)
         {
-            final String name = attribute;
-
             try
             {
-                final Object value = getAttribute(name);
-                final Attribute attr = new Attribute(name, value);
+                final Object value = getAttribute(attribute);
+                final Attribute attr = new Attribute(attribute, value);
 
                 values.add(attr);
             }
@@ -300,53 +300,35 @@ import java.util.ArrayList;
                 {
                     int paramCount = 0;
 
-                    final Class<?>[] paramClazzes = new Class<?>[params.length];
+                    final Class<?>[] paramClazzes = getClasses(params, signature, paramCount);
 
-                    for (final String param : signature)
+                    Method method = null;
+                    try
                     {
-                        if ("boolean".equals(param))
-                        {
-                            paramClazzes[paramCount] = Boolean.TYPE;
-                        }
-                        else if ("int".equals(param))
-                        {
-                            paramClazzes[paramCount] = Integer.TYPE;
-                        }
-                        else if ("char".equals(param))
-                        {
-                            paramClazzes[paramCount] = Character.TYPE;
-                        }
-                        else if ("long".equals(param))
-                        {
-                            paramClazzes[paramCount] = Long.TYPE;
-                        }
-                        else if ("double".equals(param))
-                        {
-                            paramClazzes[paramCount] = Double.TYPE;
-                        }
-                        else if ("float".equals(param))
-                        {
-                            paramClazzes[paramCount] = Float.TYPE;
-                        }
-                        else if ("byte".equals(param))
-                        {
-                            paramClazzes[paramCount] = Byte.TYPE;
-                        }
-                        else
-                        {
-                            paramClazzes[paramCount] = Class.forName(param);
-                        }
-
-                        paramCount++;
+                        method = objClass.getMethod(actionName, paramClazzes);
+                    }
+                    catch (NoSuchMethodException nsme)
+                    {
+                        // nothing, move on
                     }
 
-                    final Method method = objClass.getMethod(actionName, paramClazzes);
+                    if(method == null)
+                    {
+                        method = findMethod(objClass, actionName, paramClazzes);
+                    }
 
-                    method.setAccessible(true);
+                    if(method == null)
+                    {
+                        throw new Exception("Could not find method " + actionName);
+                    }
+                    else
+                    {
+                        method.setAccessible(true);
 
-                    retVal = method.invoke(objInstance, params);
+                        retVal = method.invoke(objInstance, params);
 
-                    method.setAccessible(false);
+                        method.setAccessible(false);
+                    }
                 }
                 catch (Exception e)
                 {
@@ -374,5 +356,90 @@ import java.util.ArrayList;
     public MBeanInfo getMBeanInfo()
     {
         return info;
+    }
+
+    private Class<?>[] getClasses(Object[] params, String[] signature, int paramCount) throws ClassNotFoundException
+    {
+        final Class<?>[] paramClazzes = new Class<?>[params.length];
+
+        for (final String param : signature)
+        {
+            if ("boolean".equals(param))
+            {
+                paramClazzes[paramCount] = Boolean.TYPE;
+            }
+            else if ("int".equals(param))
+            {
+                paramClazzes[paramCount] = Integer.TYPE;
+            }
+            else if ("char".equals(param))
+            {
+                paramClazzes[paramCount] = Character.TYPE;
+            }
+            else if ("long".equals(param))
+            {
+                paramClazzes[paramCount] = Long.TYPE;
+            }
+            else if ("double".equals(param))
+            {
+                paramClazzes[paramCount] = Double.TYPE;
+            }
+            else if ("float".equals(param))
+            {
+                paramClazzes[paramCount] = Float.TYPE;
+            }
+            else if ("byte".equals(param))
+            {
+                paramClazzes[paramCount] = Byte.TYPE;
+            }
+            else
+            {
+                paramClazzes[paramCount] = Class.forName(param);
+            }
+
+            paramCount++;
+        }
+
+        return paramClazzes;
+    }
+
+    private List<Method> getMethods(final Class<?> objClass)
+    {
+        final List<Method> retMethods = new ArrayList<Method>();
+
+        if(!(objClass == Object.class))
+        {
+            retMethods.addAll(Arrays.asList(objClass.getDeclaredMethods()));
+
+            // recurse until objClass == Object.class
+            retMethods.addAll(getMethods(objClass.getSuperclass()));
+        }
+
+        return retMethods;
+    }
+
+    private Method findMethod(final Class<?> objClass, final String methodName, final Class<?>[] paramClazzes)
+    {
+        Method retMethod = null;
+
+        if(!(objClass == Object.class))
+        {
+            try
+            {
+                retMethod = objClass.getDeclaredMethod(methodName, paramClazzes);
+            }
+            catch (Exception e)
+            {
+                // nothing
+            }
+
+            if(retMethod == null)
+            {
+                // recurse until we are at Object.class
+                retMethod = findMethod(objClass.getSuperclass(), methodName, paramClazzes);
+            }
+        }
+
+        return retMethod;
     }
 }
