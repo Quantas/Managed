@@ -24,6 +24,7 @@
 
 package com.quantasnet.management;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -41,6 +42,7 @@ import static java.lang.annotation.ElementType.METHOD;
  */
 @Target({FIELD, METHOD, CONSTRUCTOR})
 @Retention(RetentionPolicy.RUNTIME)
+@Documented
 public @interface Managed
 {
     /**
@@ -53,7 +55,7 @@ public @interface Managed
     /**
      * Say if we are able to write to the field
      *
-     * @return writable - defaults to false
+     * @return writable - defaults to false, except if placed on a setter, then assume writable = true
      */
     public boolean writable() default false;
 

@@ -25,20 +25,11 @@
 package com.quantasnet.management;
 
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import javax.management.Attribute;
-import javax.management.AttributeList;
-import javax.management.AttributeNotFoundException;
-import javax.management.DynamicMBean;
-import javax.management.InstanceNotFoundException;
-import javax.management.InvalidAttributeValueException;
-import javax.management.MBeanException;
-import javax.management.MBeanInfo;
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
-import javax.management.ReflectionException;
+import javax.management.*;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 
@@ -49,7 +40,6 @@ public class ManagedTest
     private final ObjectName testClassObjName = ManagementProcessor.constructObjectName(TestClass.class);
     private final MBeanServer server = ManagementFactory.getPlatformMBeanServer();
     private static final TestClass testClass = new TestClass();
-
 
     @BeforeClass
     public static void beforeClass()
@@ -78,19 +68,29 @@ public class ManagedTest
     @Test
     public void managementTest_invoke() throws InstanceNotFoundException, ReflectionException, MBeanException, IOException
     {
-        server.invoke(testClassObjName, "setBooleans", new Object[]{true, false}, new String[]{"java.lang.Boolean", "boolean"});
-        server.invoke(testClassObjName, "setIntegers", new Object[]{1, 2}, new String[]{"java.lang.Integer", "int"});
-        server.invoke(testClassObjName, "setCharacters", new Object[]{'a', 'b'}, new String[]{"java.lang.Character", "char"});
-        server.invoke(testClassObjName, "setLongs", new Object[]{0L, 1L}, new String[]{"java.lang.Long", "long"});
-        server.invoke(testClassObjName, "setDoubles", new Object[]{0.0, 0.1}, new String[]{"java.lang.Double", "double"});
-        server.invoke(testClassObjName, "setFloats", new Object[]{0.0f, 0.1f}, new String[]{"java.lang.Float", "float"});
-        server.invoke(testClassObjName, "setBytes", new Object[]{(byte) 0x0, (byte) 0x0}, new String[]{"java.lang.Byte", "byte"});
+        server.invoke(testClassObjName, "execBooleans", new Object[]{true, false}, new String[]{"java.lang.Boolean", "boolean"});
+        server.invoke(testClassObjName, "execIntegers", new Object[]{1, 2}, new String[]{"java.lang.Integer", "int"});
+        server.invoke(testClassObjName, "execCharacters", new Object[]{'a', 'b'}, new String[]{"java.lang.Character", "char"});
+        server.invoke(testClassObjName, "execLongs", new Object[]{0L, 1L}, new String[]{"java.lang.Long", "long"});
+        server.invoke(testClassObjName, "execDoubles", new Object[]{0.0, 0.1}, new String[]{"java.lang.Double", "double"});
+        server.invoke(testClassObjName, "execFloats", new Object[]{0.0f, 0.1f}, new String[]{"java.lang.Float", "float"});
+        server.invoke(testClassObjName, "execBytes", new Object[]{(byte) 0x0, (byte) 0x0}, new String[]{"java.lang.Byte", "byte"});
+    }
+
+    @Test
+    public void managementTest_attributeMethods() throws AttributeNotFoundException, InstanceNotFoundException, MBeanException, ReflectionException, InvalidAttributeValueException
+    {
+        server.getAttribute(testClassObjName, "someString");
+        Assert.assertEquals(server.getAttribute(testClassObjName, "someInt"), 1);
+        server.getAttribute(testClassObjName, "someBoolean");
+        server.setAttribute(testClassObjName, new Attribute("someInt", 2));
+        Assert.assertEquals(server.getAttribute(testClassObjName, "someInt"), 2);
     }
 
     @Test(expected = MBeanException.class)
     public void managementTest_invalidParamException() throws InstanceNotFoundException, ReflectionException, MBeanException
     {
-        server.invoke(testClassObjName, "setBytes", new Object[]{0, 0}, new String[]{"java.lang.Byte", "byte"});
+        server.invoke(testClassObjName, "execBytes", new Object[]{0, 0}, new String[]{"java.lang.Byte", "byte"});
     }
 
     @Test
@@ -237,10 +237,46 @@ public class ManagedTest
 
     private static final class TestClass
     {
+        private String someString = "a String";
+
+        private int someInt = 1;
+
+        private boolean someBoolean = false;
+
         @Managed
         public TestClass()
         {
 
+        }
+
+        @Managed
+        public boolean isSomeBoolean()
+        {
+            return someBoolean;
+        }
+
+        @Managed(writable=true)
+        public void setSomeInt(final int integer)
+        {
+            this.someInt = integer;
+        }
+
+        @Managed
+        public int getSomeInt()
+        {
+            return someInt;
+        }
+
+        @Managed(writable=true)
+        public void setSomeString(final String string)
+        {
+            this.someString = string;
+        }
+
+        @Managed
+        public String getSomeString()
+        {
+            return someString;
         }
 
         @SuppressWarnings("unused")
@@ -298,55 +334,54 @@ public class ManagedTest
         private Byte bigByte;
 
         @Managed
-        public void setBooleans(final Boolean big, final boolean little)
+        public void execBooleans(final Boolean big, final boolean little)
         {
             this.littleBoolean = little;
             this.bigBoolean = big;
         }
 
         @Managed
-        public void setIntegers(final Integer big, final int little)
+        public void execIntegers(final Integer big, final int little)
         {
             this.littleInteger = little;
             this.bigInteger = big;
         }
 
         @Managed
-        public void setCharacters(final Character big, final char little)
+        public void execCharacters(final Character big, final char little)
         {
             this.littleCharacter = little;
             this.bigCharacter = big;
         }
 
         @Managed
-        public void setLongs(final Long big, final long little)
+        public void execLongs(final Long big, final long little)
         {
             this.littleLong = little;
             this.bigLong = big;
         }
 
         @Managed
-        public void setDoubles(final Double big, final double little)
+        public void execDoubles(final Double big, final double little)
         {
             this.littleDouble = little;
             this.bigDouble = big;
         }
 
         @Managed
-        public void setFloats(final Float big, final float little)
+        public void execFloats(final Float big, final float little)
         {
             this.littleFloat = little;
             this.bigFloat = big;
         }
 
         @Managed
-        public void setBytes(final Byte big, final byte little)
+        public void execBytes(final Byte big, final byte little)
         {
             this.littleByte = little;
             this.bigByte = big;
         }
 
-        @SuppressWarnings("unused")
         public void unManaged()
         {
             //no-op

@@ -31,12 +31,12 @@ import javax.management.Attribute;
 import javax.management.AttributeList;
 import javax.management.AttributeNotFoundException;
 import javax.management.DynamicMBean;
+import javax.management.IntrospectionException;
 import javax.management.InvalidAttributeValueException;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanConstructorInfo;
 import javax.management.MBeanException;
 import javax.management.MBeanInfo;
-import javax.management.MBeanNotificationInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.ReflectionException;
 import java.lang.reflect.Constructor;
@@ -44,7 +44,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This class takes the object passed in and parses all the @Managed annotations for the constructors/methods/fields<br />
@@ -53,11 +55,17 @@ import java.util.List;
  * this class to create the object then register it with the PlatformMBeanServer.<br />
  * <br />
  *
+ * TODO class needs some refactoring
+ *
  * @author Quantas
  */
 /*package*/ final class DynamicManagementMBean implements DynamicMBean
 {
     private static final Logger LOG = LoggerFactory.getLogger(DynamicManagementMBean.class);
+
+    private static final String SET = "set";
+    private static final String GET = "get";
+    private static final String IS = "is";
 
     private Object objInstance;
     private Class<?> objClass;
@@ -66,7 +74,11 @@ import java.util.List;
     private MBeanAttributeInfo[] attributes;
     private MBeanOperationInfo[] operations;
     private MBeanConstructorInfo[] mgmtConstructors;
-    private MBeanNotificationInfo[] notifications;
+
+    // Notifications are Not Implemented at this time
+    //private MBeanNotificationInfo[] notifications;
+
+    private final Map<String, AttributeWithMethods> attributeMethodMap = new HashMap<String, AttributeWithMethods>();
 
     /**
      * @param objInstance The instance of the object to be Managed
@@ -78,7 +90,6 @@ import java.util.List;
 
         objClass = objInstance.getClass();
 
-        // We also want methods from parent classes that may be annotated
         final List<Method> methods = getMethods(objClass);
 
         final Field[] fields = objClass.getDeclaredFields();
@@ -87,66 +98,10 @@ import java.util.List;
         attributes = null;
         operations = null;
         mgmtConstructors = null;
-        notifications = null;    //NYI
 
         createMBeans(methods, fields, constructors);
 
-        info = new MBeanInfo(this.objClass.getName(), description, attributes, mgmtConstructors, operations, notifications);
-    }
-
-    private void createMBeans(final List<Method> methods, final Field[] fields, final Constructor<?>[] constructors)
-    {
-        final List<MBeanAttributeInfo> attrList = new ArrayList<MBeanAttributeInfo>();
-        final List<MBeanOperationInfo> operList = new ArrayList<MBeanOperationInfo>();
-        final List<MBeanConstructorInfo> consList = new ArrayList<MBeanConstructorInfo>();
-
-        //Parse the annotations for all the methods
-        for (final Method method : methods)
-        {
-            final Managed mgmt = method.getAnnotation(Managed.class);
-            if (mgmt != null)
-            {
-                operList.add(new MBeanOperationInfo(mgmt.description(), method));
-            }
-        }
-
-        //Parse the annotations for all the fields
-        for (final Field field : fields)
-        {
-            final Managed mgmt = field.getAnnotation(Managed.class);
-            if (mgmt != null)
-            {
-                attrList.add(new MBeanAttributeInfo(field.getName(), field.getType().getName(), mgmt.description(), mgmt.readable(), mgmt.writable(), false));
-            }
-        }
-
-        //Parse the annotations for all the constructors
-        for (final Constructor<?> constructor : constructors)
-        {
-            final Managed mgmt = constructor.getAnnotation(Managed.class);
-            if (mgmt != null)
-            {
-                consList.add(new MBeanConstructorInfo(mgmt.description(), constructor));
-            }
-        }
-
-        if (!attrList.isEmpty())
-        {
-            attributes = new MBeanAttributeInfo[attrList.size()];
-            attrList.toArray(attributes);
-        }
-
-        if (!operList.isEmpty())
-        {
-            operations = new MBeanOperationInfo[operList.size()];
-            operList.toArray(operations);
-        }
-
-        if (!consList.isEmpty())
-        {
-            mgmtConstructors = new MBeanConstructorInfo[consList.size()];
-            consList.toArray(mgmtConstructors);
-        }
+        info = new MBeanInfo(this.objClass.getName(), description, attributes, mgmtConstructors, operations, null/*notifications*/);
     }
 
     public Object getAttribute(final String attribute) throws AttributeNotFoundException, MBeanException, ReflectionException
@@ -165,6 +120,29 @@ import java.util.List;
 
                     if (mbeanAttr.isReadable())
                     {
+                        for (final Map.Entry<String, AttributeWithMethods> entry : attributeMethodMap.entrySet())
+                        {
+                            final String entryName = entry.getKey();
+                            final AttributeWithMethods attributeWithMethods = entry.getValue();
+
+                            if(entryName.equals(attribute))
+                            {
+                                final Method method = attributeWithMethods.getGetOrIsMethod();
+                                final boolean isAccessible = method.isAccessible();
+                                if(!isAccessible)
+                                {
+                                    method.setAccessible(true);
+                                }
+
+                                value = method.invoke(objInstance, null);
+
+                                method.setAccessible(isAccessible);
+
+                                return value;
+                            }
+                        }
+
+                        //TODO maybe remove the extra reflection here
                         final Field field = objClass.getDeclaredField(attribute);
 
                         final boolean isAccessible = field.isAccessible();
@@ -203,6 +181,8 @@ import java.util.List;
         {
             boolean foundAttribute = false;
 
+            boolean alreadySet = false;
+
             for (final MBeanAttributeInfo mbeanAttr : attributes)
             {
                 if (mbeanAttr.getName().equals(attribute.getName()))
@@ -211,16 +191,44 @@ import java.util.List;
 
                     if (mbeanAttr.isWritable())
                     {
-                        final Field field = objClass.getDeclaredField(attribute.getName());
-                        final boolean isAccessible = field.isAccessible();
-                        if (!isAccessible)
+                        for (final Map.Entry<String, AttributeWithMethods> entry : attributeMethodMap.entrySet())
                         {
-                            field.setAccessible(true);
+                            final String entryName = entry.getKey();
+                            final AttributeWithMethods attributeWithMethods = entry.getValue();
+
+                            if(entryName.equals(attribute.getName()))
+                            {
+                                final Method method = attributeWithMethods.getSetMethod();
+                                final boolean isAccessible = method.isAccessible();
+                                if(!isAccessible)
+                                {
+                                    method.setAccessible(true);
+                                }
+
+                                method.invoke(objInstance, attribute.getValue());
+
+                                method.setAccessible(isAccessible);
+
+                                alreadySet = true;
+
+                                break;
+                            }
                         }
 
-                        field.set(objInstance, attribute.getValue());
+                        if(!alreadySet)
+                        {
+                            final Field field = objClass.getDeclaredField(attribute.getName());
+                            final boolean isAccessible = field.isAccessible();
+                            if (!isAccessible)
+                            {
+                                field.setAccessible(true);
+                            }
 
-                        field.setAccessible(isAccessible);
+                            //TODO maybe remove the extra reflection here
+                            field.set(objInstance, attribute.getValue());
+
+                            field.setAccessible(isAccessible);
+                        }
                     }
                     else
                     {
@@ -300,11 +308,12 @@ import java.util.List;
                 {
                     int paramCount = 0;
 
-                    final Class<?>[] paramClazzes = getClasses(params, signature, paramCount);
+                    final Class<?>[] paramClazzes = getParamClasses(params, signature, paramCount);
 
                     Method method = null;
                     try
                     {
+                        //TODO maybe remove the extra reflection here
                         method = objClass.getMethod(actionName, paramClazzes);
                     }
                     catch (NoSuchMethodException nsme)
@@ -314,6 +323,7 @@ import java.util.List;
 
                     if(method == null)
                     {
+                        //TODO maybe remove the extra reflection here
                         method = findMethod(objClass, actionName, paramClazzes);
                     }
 
@@ -358,7 +368,227 @@ import java.util.List;
         return info;
     }
 
-    private Class<?>[] getClasses(Object[] params, String[] signature, int paramCount) throws ClassNotFoundException
+    ////////////////////////////////////////////////////////
+    //  Private Methods
+    ////////////////////////////////////////////////////////
+
+    /**
+     * TODO this method needs refactoring
+     *
+     * @param methods
+     * @param fields
+     * @param constructors
+     */
+    private void createMBeans(final List<Method> methods, final Field[] fields, final Constructor<?>[] constructors)
+    {
+        final List<MBeanAttributeInfo> attrList = new ArrayList<MBeanAttributeInfo>();
+        final List<MBeanOperationInfo> operList = new ArrayList<MBeanOperationInfo>();
+        final List<MBeanConstructorInfo> consList = new ArrayList<MBeanConstructorInfo>();
+
+        final List<String> methodAttr = new ArrayList<String>();
+
+        //Parse the annotations for all the methods
+        for (final Method method : methods)
+        {
+            final Managed mgmt = method.getAnnotation(Managed.class);
+            if (mgmt != null)
+            {
+                if(checkGetSetIs(method))
+                {
+                    final String attributeName = getAttributeNameFromMethod(method);
+
+                    if(!methodAttr.contains(attributeName))
+                    {
+                        Method first = null;
+                        final Method other = findOtherMethod(attributeName, method, methods);
+
+                        final String methodName = method.getName();
+
+                        boolean firstGetter = false;
+
+                        if(methodName.startsWith(GET) || methodName.startsWith(IS) && mgmt.readable())
+                        {
+                            firstGetter = true;
+                            first = method;
+                        }
+                        else if(methodName.startsWith(SET))
+                        {
+                            first = method;
+                        }
+
+                        if(other != null && (other.getName().startsWith(GET) || other.getName().startsWith(IS)))
+                        {
+                            firstGetter = false;
+                        }
+
+                        try
+                        {
+                            MBeanAttributeInfo attrInfo = null;
+                            AttributeWithMethods attributeWithMethods = null;
+
+                            if(firstGetter)
+                            {
+                                attrInfo = new MBeanAttributeInfo(attributeName, mgmt.description(), first, other);
+                                attributeWithMethods = new AttributeWithMethods(attrInfo, first, other);
+                            }
+                            else
+                            {
+                                attrInfo = new MBeanAttributeInfo(attributeName, mgmt.description(), other, first);
+                                attributeWithMethods = new AttributeWithMethods(attrInfo, other, first);
+                            }
+
+                            attributeMethodMap.put(attributeName, attributeWithMethods);
+                            attrList.add(attrInfo);
+                            methodAttr.add(attributeName);
+                        }
+                        catch(IntrospectionException ie)
+                        {
+                            LOG.error("Error creating attribute from get/set/is methods for " + attributeName, ie);
+                        }
+                    }
+                }
+                else
+                {
+                    operList.add(new MBeanOperationInfo(mgmt.description(), method));
+                }
+            }
+        }
+
+        //Parse the annotations for all the fields
+        for (final Field field : fields)
+        {
+            final Managed mgmt = field.getAnnotation(Managed.class);
+            if (mgmt != null)
+            {
+                attrList.add(new MBeanAttributeInfo(field.getName(), field.getType().getName(), mgmt.description(), mgmt.readable(), mgmt.writable(), false));
+            }
+        }
+
+        //Parse the annotations for all the constructors
+        for (final Constructor<?> constructor : constructors)
+        {
+            final Managed mgmt = constructor.getAnnotation(Managed.class);
+            if (mgmt != null)
+            {
+                consList.add(new MBeanConstructorInfo(mgmt.description(), constructor));
+            }
+        }
+
+        if (!attrList.isEmpty())
+        {
+            attributes = new MBeanAttributeInfo[attrList.size()];
+            attrList.toArray(attributes);
+        }
+
+        if (!operList.isEmpty())
+        {
+            operations = new MBeanOperationInfo[operList.size()];
+            operList.toArray(operations);
+        }
+
+        if (!consList.isEmpty())
+        {
+            mgmtConstructors = new MBeanConstructorInfo[consList.size()];
+            consList.toArray(mgmtConstructors);
+        }
+    }
+
+    /**
+     * Find a matching method for a getter/setter/is method, ie, if the first method was a get, find the set.
+     *
+     * @param attributeName Name of the attribute to search for
+     * @param method Original Method
+     * @param methods List of all the available Methods
+     * @return Method to match first method, may be null
+     */
+    private Method findOtherMethod(final String attributeName, final Method method, final List<Method> methods)
+    {
+        final String methodName = method.getName();
+
+        boolean needSet = methodName.startsWith(GET) || methodName.startsWith(IS);
+
+        for(final Method listMethod : methods)
+        {
+            final Managed mgmt = listMethod.getAnnotation(Managed.class);
+
+            if(mgmt != null)
+            {
+                final String listMethodName = listMethod.getName();
+
+                boolean foundCorrectMethod = false;
+
+                if(needSet && listMethodName.startsWith(SET))
+                {
+                    foundCorrectMethod = true;
+                }
+                else if (!needSet && (listMethodName.startsWith(GET) || listMethodName.startsWith(IS)))
+                {
+                    foundCorrectMethod = true;
+                }
+
+                if(foundCorrectMethod)
+                {
+                    final String listAttributeName = getAttributeNameFromMethod(listMethod);
+                    if(listAttributeName.equals(attributeName))
+                    {
+                        // do some real logic, lol
+                        if ((listMethodName.startsWith(GET) || listMethodName.startsWith(IS)) && mgmt.readable())
+                        {
+                            return listMethod;
+                        }
+                        else if ((listMethodName.startsWith(SET)))
+                        {
+                            return listMethod;
+                        }
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Return the attribute name from a getter/setter/is method
+     *
+     * @param method Method to check
+     * @return String attribute name
+     */
+    private String getAttributeNameFromMethod(final Method method)
+    {
+        final String methodName = method.getName();
+
+        String retString;
+
+        if(methodName.startsWith(GET) || methodName.startsWith(SET))
+        {
+            retString = methodName.substring(3);
+        }
+        else
+        {
+            // assume startsWith "is"
+            retString = methodName.substring(2);
+        }
+
+        return retString.substring(0, 1).toLowerCase() + retString.substring(1);
+    }
+
+    private boolean checkGetSetIs(final Method method)
+    {
+        final String methodName = method.getName();
+        return methodName.startsWith(GET) || methodName.startsWith(SET) || methodName.startsWith(IS);
+    }
+
+    /**
+     * Get the parameter classes, including support for primitives
+     *
+     * @param params
+     * @param signature
+     * @param paramCount
+     * @return
+     * @throws ClassNotFoundException
+     */
+    private Class<?>[] getParamClasses(Object[] params, String[] signature, int paramCount) throws ClassNotFoundException
     {
         final Class<?>[] paramClazzes = new Class<?>[params.length];
 
@@ -403,6 +633,14 @@ import java.util.List;
         return paramClazzes;
     }
 
+    /**
+     * We also want methods from parent classes that may be annotated,
+     * so we recurse through the class's hierarchy until we are at the top,
+     * meaning Object
+     *
+     * @param objClass
+     * @return
+     */
     private List<Method> getMethods(final Class<?> objClass)
     {
         final List<Method> retMethods = new ArrayList<Method>();
