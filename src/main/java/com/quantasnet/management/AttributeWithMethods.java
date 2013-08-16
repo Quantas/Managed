@@ -40,7 +40,7 @@ import java.lang.reflect.Method;
     {
         this.mbeanAttribute = mbeanAttribute;
 
-        if(getOrIsMethod == null)
+        if (getOrIsMethod == null)
         {
             this.getOrIsMethod = null;
         }
@@ -49,7 +49,7 @@ import java.lang.reflect.Method;
             this.getOrIsMethod = getOrIsMethod;
         }
 
-        if(setMethod == null)
+        if (setMethod == null)
         {
             this.setMethod = null;
         }

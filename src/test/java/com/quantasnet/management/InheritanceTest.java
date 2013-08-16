@@ -39,7 +39,7 @@ public class InheritanceTest
     {
         final Object[] objArray = new Object[0];
         final String[] stringArray = new String[0];
-        
+
         final MBeanServer server = ManagementFactory.getPlatformMBeanServer();
         final ObjectName testClassObjName = ManagementProcessor.constructObjectName(TestChild.class);
 

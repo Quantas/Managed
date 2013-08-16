@@ -29,7 +29,17 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import javax.management.*;
+import javax.management.Attribute;
+import javax.management.AttributeList;
+import javax.management.AttributeNotFoundException;
+import javax.management.DynamicMBean;
+import javax.management.InstanceNotFoundException;
+import javax.management.InvalidAttributeValueException;
+import javax.management.MBeanException;
+import javax.management.MBeanInfo;
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
+import javax.management.ReflectionException;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 
@@ -263,7 +273,7 @@ public class ManagedTest
             return someBoolean;
         }
 
-        @Managed(writable=true)
+        @Managed(writable = true)
         public void setSomeInt(final int integer)
         {
             this.someInt = integer;
@@ -275,7 +285,7 @@ public class ManagedTest
             return someInt;
         }
 
-        @Managed(writable=true)
+        @Managed(writable = true)
         public void setSomeString(final String string)
         {
             this.someString = string;

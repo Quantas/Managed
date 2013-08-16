@@ -54,7 +54,7 @@ import java.util.Map;
  * This class should not be used directly, but invoked through the ManagementProcessor's register method, which will call<br />
  * this class to create the object then register it with the PlatformMBeanServer.<br />
  * <br />
- *
+ * <p/>
  * TODO class needs some refactoring
  *
  * @author Quantas
@@ -127,11 +127,11 @@ import java.util.Map;
                             final String entryName = entry.getKey();
                             final AttributeWithMethods attributeWithMethods = entry.getValue();
 
-                            if(entryName.equals(attribute))
+                            if (entryName.equals(attribute))
                             {
                                 final Method method = attributeWithMethods.getGetOrIsMethod();
                                 final boolean isAccessible = method.isAccessible();
-                                if(!isAccessible)
+                                if (!isAccessible)
                                 {
                                     method.setAccessible(true);
                                 }
@@ -198,11 +198,11 @@ import java.util.Map;
                             final String entryName = entry.getKey();
                             final AttributeWithMethods attributeWithMethods = entry.getValue();
 
-                            if(entryName.equals(attribute.getName()))
+                            if (entryName.equals(attribute.getName()))
                             {
                                 final Method method = attributeWithMethods.getSetMethod();
                                 final boolean isAccessible = method.isAccessible();
-                                if(!isAccessible)
+                                if (!isAccessible)
                                 {
                                     method.setAccessible(true);
                                 }
@@ -217,7 +217,7 @@ import java.util.Map;
                             }
                         }
 
-                        if(!alreadySet)
+                        if (!alreadySet)
                         {
                             final Field field = objClass.getDeclaredField(attribute.getName());
                             final boolean isAccessible = field.isAccessible();
@@ -314,32 +314,32 @@ import java.util.Map;
 
                     Method method = null;
 
-                    for(final Map.Entry<Method, String> entry : methodMap.entrySet())
+                    for (final Map.Entry<Method, String> entry : methodMap.entrySet())
                     {
                         final Method mapMethod = entry.getKey();
                         final Class<?>[] mapMethodParams = mapMethod.getParameterTypes();
-                        if(actionName.equals(entry.getValue()) && mapMethodParams.length == paramClazzes.length)
+                        if (actionName.equals(entry.getValue()) && mapMethodParams.length == paramClazzes.length)
                         {
                             boolean correctMethod = true;
                             // we found a method with same name and same param count
                             // double check it is the correct method
-                            for(int i=0; i<mapMethodParams.length; i++)
+                            for (int i = 0; i < mapMethodParams.length; i++)
                             {
-                                if(!(mapMethodParams[i] == paramClazzes[i]))
+                                if (!(mapMethodParams[i] == paramClazzes[i]))
                                 {
                                     correctMethod = false;
                                     break;
                                 }
                             }
 
-                            if(correctMethod)
+                            if (correctMethod)
                             {
                                 method = mapMethod;
                             }
                         }
                     }
 
-                    if(method == null)
+                    if (method == null)
                     {
                         throw new Exception("Could not find method " + actionName);
                     }
@@ -402,11 +402,11 @@ import java.util.Map;
             final Managed mgmt = method.getAnnotation(Managed.class);
             if (mgmt != null)
             {
-                if(checkGetSetIs(method))
+                if (checkGetSetIs(method))
                 {
                     final String attributeName = getAttributeNameFromMethod(method);
 
-                    if(!methodAttr.contains(attributeName))
+                    if (!methodAttr.contains(attributeName))
                     {
                         Method first = null;
                         final Method other = findOtherMethod(attributeName, method, methods);
@@ -415,17 +415,17 @@ import java.util.Map;
 
                         boolean firstGetter = false;
 
-                        if(methodName.startsWith(GET) || methodName.startsWith(IS) && mgmt.readable())
+                        if (methodName.startsWith(GET) || methodName.startsWith(IS) && mgmt.readable())
                         {
                             firstGetter = true;
                             first = method;
                         }
-                        else if(methodName.startsWith(SET))
+                        else if (methodName.startsWith(SET))
                         {
                             first = method;
                         }
 
-                        if(other != null && (other.getName().startsWith(GET) || other.getName().startsWith(IS)))
+                        if (other != null && (other.getName().startsWith(GET) || other.getName().startsWith(IS)))
                         {
                             firstGetter = false;
                         }
@@ -435,7 +435,7 @@ import java.util.Map;
                             MBeanAttributeInfo attrInfo = null;
                             AttributeWithMethods attributeWithMethods = null;
 
-                            if(firstGetter)
+                            if (firstGetter)
                             {
                                 attrInfo = new MBeanAttributeInfo(attributeName, mgmt.description(), first, other);
                                 attributeWithMethods = new AttributeWithMethods(attrInfo, first, other);
@@ -450,7 +450,7 @@ import java.util.Map;
                             attrList.add(attrInfo);
                             methodAttr.add(attributeName);
                         }
-                        catch(IntrospectionException ie)
+                        catch (IntrospectionException ie)
                         {
                             LOG.error("Error creating attribute from get/set/is methods for " + attributeName, ie);
                         }
@@ -507,8 +507,8 @@ import java.util.Map;
      * Find a matching method for a getter/setter/is method, ie, if the first method was a get, find the set.
      *
      * @param attributeName Name of the attribute to search for
-     * @param method Original Method
-     * @param methods List of all the available Methods
+     * @param method        Original Method
+     * @param methods       List of all the available Methods
      * @return Method to match first method, may be null
      */
     private Method findOtherMethod(final String attributeName, final Method method, final List<Method> methods)
@@ -517,17 +517,17 @@ import java.util.Map;
 
         boolean needSet = methodName.startsWith(GET) || methodName.startsWith(IS);
 
-        for(final Method listMethod : methods)
+        for (final Method listMethod : methods)
         {
             final Managed mgmt = listMethod.getAnnotation(Managed.class);
 
-            if(mgmt != null)
+            if (mgmt != null)
             {
                 final String listMethodName = listMethod.getName();
 
                 boolean foundCorrectMethod = false;
 
-                if(needSet && listMethodName.startsWith(SET))
+                if (needSet && listMethodName.startsWith(SET))
                 {
                     foundCorrectMethod = true;
                 }
@@ -536,10 +536,10 @@ import java.util.Map;
                     foundCorrectMethod = true;
                 }
 
-                if(foundCorrectMethod)
+                if (foundCorrectMethod)
                 {
                     final String listAttributeName = getAttributeNameFromMethod(listMethod);
-                    if(listAttributeName.equals(attributeName))
+                    if (listAttributeName.equals(attributeName))
                     {
                         // do some real logic, lol
                         if ((listMethodName.startsWith(GET) || listMethodName.startsWith(IS)) && mgmt.readable())
@@ -570,7 +570,7 @@ import java.util.Map;
 
         String retString;
 
-        if(methodName.startsWith(GET) || methodName.startsWith(SET))
+        if (methodName.startsWith(GET) || methodName.startsWith(SET))
         {
             retString = methodName.substring(3);
         }
@@ -655,7 +655,7 @@ import java.util.Map;
     {
         final List<Method> retMethods = new ArrayList<Method>();
 
-        if(!(objClass == Object.class))
+        if (!(objClass == Object.class))
         {
             retMethods.addAll(Arrays.asList(objClass.getDeclaredMethods()));
 
