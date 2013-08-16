@@ -80,6 +80,8 @@ import java.util.Map;
 
     private final Map<String, AttributeWithMethods> attributeMethodMap = new HashMap<String, AttributeWithMethods>();
 
+    private final Map<Method, String> methodMap = new HashMap<Method, String>();
+
     /**
      * @param objInstance The instance of the object to be Managed
      * @param description Description of the object for JMX
@@ -311,20 +313,30 @@ import java.util.Map;
                     final Class<?>[] paramClazzes = getParamClasses(params, signature, paramCount);
 
                     Method method = null;
-                    try
-                    {
-                        //TODO maybe remove the extra reflection here
-                        method = objClass.getMethod(actionName, paramClazzes);
-                    }
-                    catch (NoSuchMethodException nsme)
-                    {
-                        // nothing, move on
-                    }
 
-                    if(method == null)
+                    for(final Map.Entry<Method, String> entry : methodMap.entrySet())
                     {
-                        //TODO maybe remove the extra reflection here
-                        method = findMethod(objClass, actionName, paramClazzes);
+                        final Method mapMethod = entry.getKey();
+                        final Class<?>[] mapMethodParams = mapMethod.getParameterTypes();
+                        if(actionName.equals(entry.getValue()) && mapMethodParams.length == paramClazzes.length)
+                        {
+                            boolean correctMethod = true;
+                            // we found a method with same name and same param count
+                            // double check it is the correct method
+                            for(int i=0; i<mapMethodParams.length; i++)
+                            {
+                                if(!(mapMethodParams[i] == paramClazzes[i]))
+                                {
+                                    correctMethod = false;
+                                    break;
+                                }
+                            }
+
+                            if(correctMethod)
+                            {
+                                method = mapMethod;
+                            }
+                        }
                     }
 
                     if(method == null)
@@ -334,10 +346,7 @@ import java.util.Map;
                     else
                     {
                         method.setAccessible(true);
-
                         retVal = method.invoke(objInstance, params);
-
-                        method.setAccessible(false);
                     }
                 }
                 catch (Exception e)
@@ -450,6 +459,7 @@ import java.util.Map;
                 else
                 {
                     operList.add(new MBeanOperationInfo(mgmt.description(), method));
+                    methodMap.put(method, method.getName());
                 }
             }
         }
@@ -654,30 +664,5 @@ import java.util.Map;
         }
 
         return retMethods;
-    }
-
-    private Method findMethod(final Class<?> objClass, final String methodName, final Class<?>[] paramClazzes)
-    {
-        Method retMethod = null;
-
-        if(!(objClass == Object.class))
-        {
-            try
-            {
-                retMethod = objClass.getDeclaredMethod(methodName, paramClazzes);
-            }
-            catch (Exception e)
-            {
-                // nothing
-            }
-
-            if(retMethod == null)
-            {
-                // recurse until we are at Object.class
-                retMethod = findMethod(objClass.getSuperclass(), methodName, paramClazzes);
-            }
-        }
-
-        return retMethod;
     }
 }

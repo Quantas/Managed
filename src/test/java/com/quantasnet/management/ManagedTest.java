@@ -188,6 +188,14 @@ public class ManagedTest
         ManagementProcessor.register(new TestDynamic());
     }
 
+    @Test
+    public void managementTest_overloadedMethod() throws InstanceNotFoundException, ReflectionException, MBeanException, IOException
+    {
+        server.invoke(testClassObjName, "execBooleans", new Object[]{true, false}, new String[]{"java.lang.Boolean", "boolean"});
+        server.invoke(testClassObjName, "execBooleans", new Object[]{true}, new String[]{"java.lang.Boolean"});
+        server.invoke(testClassObjName, "execBooleans", new Object[]{"a string", false}, new String[]{"java.lang.String", "java.lang.Boolean"});
+    }
+
     private static final class TestDynamic implements DynamicMBean
     {
         public Object getAttribute(String attribute) throws AttributeNotFoundException, MBeanException, ReflectionException
@@ -332,6 +340,18 @@ public class ManagedTest
 
         @Managed
         private Byte bigByte;
+
+        @Managed
+        public void execBooleans(final Boolean bool)
+        {
+
+        }
+
+        @Managed
+        public void execBooleans(final String string, final Boolean bool)
+        {
+
+        }
 
         @Managed
         public void execBooleans(final Boolean big, final boolean little)
